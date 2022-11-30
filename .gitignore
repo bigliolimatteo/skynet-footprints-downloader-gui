@@ -2,5 +2,6 @@ NTBL*
 .venv
 .DS_Store
 data/istat/towns_borders/*
+data/istat/towns_list/*
 test*
 *.pyc
