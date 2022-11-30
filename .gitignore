@@ -1,3 +1,4 @@
 NTBL*
 .venv
 .DS_Store
+data/istat/towns_borders/*
