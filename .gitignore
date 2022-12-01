@@ -4,3 +4,4 @@ NTBL*
 data/istat/towns_borders/*
 data/istat/towns_list/*
 *.pyc
+test/*
