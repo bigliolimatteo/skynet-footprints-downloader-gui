@@ -4,6 +4,7 @@ from shapely.geometry import MultiPoint, Point
 from PIL import Image, ImageTk
 import pandas as pd
 import geopandas as gpd
+import os
 
 customtkinter.set_default_color_theme("blue")
 
@@ -27,6 +28,7 @@ class App(customtkinter.CTk):
 
         self.marker_list = []
         self.area_polygon = None
+        self.buildings_extracted = []
 
         # ============ create two CTkFrames ============
 
@@ -42,13 +44,13 @@ class App(customtkinter.CTk):
 
         # ============ frame_left ============
 
-        self.frame_left.grid_rowconfigure(2, weight=1)
+        self.frame_left.grid_rowconfigure(5, weight=1)
 
         self.map_label = customtkinter.CTkLabel(self.frame_left, text="Tile Server:", anchor="w")
-        self.map_label.grid(row=3, column=0, padx=(20, 20), pady=(20, 0))
+        self.map_label.grid(row=2, column=0, padx=(20, 20), pady=(20, 0))
         self.map_option_menu = customtkinter.CTkOptionMenu(self.frame_left, values=["OpenStreetMap", "Google normal", "Google satellite"],
                                                                        command=self.change_map)
-        self.map_option_menu.grid(row=4, column=0, padx=(20, 20), pady=(10, 20))
+        self.map_option_menu.grid(row=5, column=0, padx=(20, 20), pady=(30, 20))
 
         self.clear_markers_button = customtkinter.CTkButton(master=self.frame_left,
                                                             text="Clear Markers",
@@ -60,6 +62,16 @@ class App(customtkinter.CTk):
                                                             command=self.generate_coverage_polygon)
         self.clear_markers_button.grid(pady=(20, 0), padx=(20, 20), row=2, column=0)
 
+        self.clear_markers_button = customtkinter.CTkButton(master=self.frame_left,
+                                                            text="Extract buildings",
+                                                            command=self.extract_buildings)
+        self.clear_markers_button.grid(pady=(20, 0), padx=(20, 20), row=3, column=0)
+
+        self.clear_markers_button = customtkinter.CTkButton(master=self.frame_left,
+                                                            text="Remove buildings",
+                                                            command=self.remove_current_buildings)
+        self.clear_markers_button.grid(pady=(20, 0), padx=(20, 20), row=4, column=0)
+        
         # ============ frame_right ============
 
         self.frame_right.grid_rowconfigure(1, weight=1)
@@ -117,6 +129,21 @@ class App(customtkinter.CTk):
             coverage_poly = MultiPoint([marker.position[::-1] for marker in self.marker_list]).convex_hull
             gpd.GeoDataFrame(pd.DataFrame([{"id": "0"}]), geometry=[coverage_poly],crs="EPSG:4326").to_file("test/coverage.shp")
 
+    def remove_current_buildings(self):
+        for building in self.buildings_extracted:
+            building.delete()
+        self.buildings_extracted = []
+
+    def extract_buildings(self):
+        self.generate_coverage_polygon()
+        if len(self.buildings_extracted):
+            self.remove_current_buildings()
+        os.system("python src/main.py -i test/coverage.shp")
+        buildings_gdf = gpd.read_file("test/extraction.shp")
+        for building in buildings_gdf.geometry:
+            self.buildings_extracted.append(self.map_widget.set_polygon([coord[::-1] for coord in building.exterior.coords],
+                                            fill_color="blue",outline_color="red", border_width=1,
+                                            name="area"))
 
     def change_appearance_mode(self, new_appearance_mode: str):
         customtkinter.set_appearance_mode(new_appearance_mode)
