@@ -44,7 +44,7 @@ class App(customtkinter.CTk):
 
         # ============ frame_left ============
 
-        self.frame_left.grid_rowconfigure(5, weight=1)
+        self.frame_left.grid_rowconfigure(4, weight=1)
 
         self.map_label = customtkinter.CTkLabel(self.frame_left, text="Tile Server:", anchor="w")
         self.map_label.grid(row=2, column=0, padx=(20, 20), pady=(20, 0))
@@ -58,19 +58,14 @@ class App(customtkinter.CTk):
         self.clear_markers_button.grid(pady=(20, 0), padx=(20, 20), row=1, column=0)
 
         self.clear_markers_button = customtkinter.CTkButton(master=self.frame_left,
-                                                            text="Generate Coverage Polygon",
-                                                            command=self.generate_coverage_polygon)
+                                                            text="Extract buildings",
+                                                            command=self.extract_buildings_event)
         self.clear_markers_button.grid(pady=(20, 0), padx=(20, 20), row=2, column=0)
 
         self.clear_markers_button = customtkinter.CTkButton(master=self.frame_left,
-                                                            text="Extract buildings",
-                                                            command=self.extract_buildings)
+                                                            text="Clear buildings",
+                                                            command=self.clear_buildings_event)
         self.clear_markers_button.grid(pady=(20, 0), padx=(20, 20), row=3, column=0)
-
-        self.clear_markers_button = customtkinter.CTkButton(master=self.frame_left,
-                                                            text="Remove buildings",
-                                                            command=self.remove_current_buildings)
-        self.clear_markers_button.grid(pady=(20, 0), padx=(20, 20), row=4, column=0)
         
         # ============ frame_right ============
 
@@ -129,15 +124,15 @@ class App(customtkinter.CTk):
             coverage_poly = MultiPoint([marker.position[::-1] for marker in self.marker_list]).convex_hull
             gpd.GeoDataFrame(pd.DataFrame([{"id": "0"}]), geometry=[coverage_poly],crs="EPSG:4326").to_file("test/coverage.shp")
 
-    def remove_current_buildings(self):
+    def clear_buildings_event(self):
         for building in self.buildings_extracted:
             building.delete()
         self.buildings_extracted = []
 
-    def extract_buildings(self):
+    def extract_buildings_event(self):
         self.generate_coverage_polygon()
         if len(self.buildings_extracted):
-            self.remove_current_buildings()
+            self.clear_buildings_event()
         os.system("python src/main.py -i test/coverage.shp")
         buildings_gdf = gpd.read_file("test/extraction.shp")
         for building in buildings_gdf.geometry:
